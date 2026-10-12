@@ -1,5 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { IconName } from '@/components/ui';
 import { useApp } from '@/state/app';
@@ -15,14 +16,25 @@ const TABS: { name: string; title: string; icon: IconName; iconActive: IconName 
 
 export default function TabsLayout() {
   const { colors, ui } = useApp();
+  // Alegreya Sans needs more line height than the default tab label box, which clipped the
+  // descenders (j, g); the bar also reserves the home-indicator inset (iPhone) / gesture bar (Android).
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.gold,
         tabBarInactiveTintColor: colors.inkMuted,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.line },
-        tabBarLabelStyle: { fontFamily: fonts.sansMedium, fontSize: 12.5 },
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.line,
+          // tab item = icon (28) + label line (17) + item padding (10); the rest is breathing room
+          height: 66 + insets.bottom,
+          paddingTop: 4,
+          paddingBottom: Math.max(insets.bottom, 6),
+        },
+        tabBarLabelStyle: { fontFamily: fonts.sansMedium, fontSize: 12.5, lineHeight: 17, flexShrink: 0 },
+        tabBarLabelPosition: 'below-icon',
         tabBarAllowFontScaling: true,
         sceneStyle: { backgroundColor: colors.bg },
       }}>

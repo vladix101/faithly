@@ -1,0 +1,28 @@
+{
+  "_comment": "Molitve sastavljene isključivo od biblijskih tekstova iz izvora bible-srp1868 (javno vlasništvo). Tekst se ne duplira: svaka molitva je spisak referenci. Tradicionalne nebiblijske molitve (Carju nebesni, Bogorodice Djevo, Simvol vere...) nisu uključene dok se ne pribavi tekst sa proverenom dozvolom; mogu se dodati ovde uz novi izvor u sources.json.",
+  "prayers": [
+    { "id": "oce-nas", "category": "morning", "title": "Молитва Господња – Оче наш", "note": "Матеј 6, 9–13", "parts": ["MAT 6:9-13"], "source": "bible-srp1868" },
+    { "id": "psalam-3", "category": "morning", "title": "Псалам 3", "note": "Први псалам шестопсалмија на јутрењу.", "parts": ["PSA 3:1-8"], "source": "bible-srp1868" },
+    { "id": "psalam-5", "category": "morning", "title": "Псалам 5 – Јутрос ћеш чути глас мој", "note": "Псалам 5", "parts": ["PSA 5:1-12"], "source": "bible-srp1868" },
+    { "id": "psalam-63", "category": "morning", "title": "Псалам 63 (62)", "note": "Псалам шестопсалмија; у богослужбеној нумерацији 62.", "parts": ["PSA 63:1-11"], "source": "bible-srp1868" },
+    { "id": "psalam-51", "category": "morning", "title": "Псалам 51 (50) – Помилуј ме, Боже", "note": "Покајни псалам; у богослужбеној нумерацији 50.", "parts": ["PSA 51:1-19"], "source": "bible-srp1868" },
+
+    { "id": "oce-nas-vece", "category": "evening", "title": "Молитва Господња – Оче наш", "note": "Матеј 6, 9–13", "parts": ["MAT 6:9-13"], "source": "bible-srp1868" },
+    { "id": "psalam-4", "category": "evening", "title": "Псалам 4 – У миру ћу лећи", "note": "Псалам 4", "parts": ["PSA 4:1-8"], "source": "bible-srp1868" },
+    { "id": "psalam-141", "category": "evening", "title": "Псалам 141 (140) – Господе, вичем к Теби", "note": "Псалам вечерња; у богослужбеној нумерацији 140.", "parts": ["PSA 141:1-10"], "source": "bible-srp1868" },
+    { "id": "psalam-91", "category": "evening", "title": "Псалам 91 (90) – Ко живи у заклону Вишњега", "note": "У богослужбеној нумерацији 90.", "parts": ["PSA 91:1-16"], "source": "bible-srp1868" },
+    { "id": "simeonova", "category": "evening", "title": "Песма Симеонова – Сад отпушташ", "note": "Лука 2, 29–32", "parts": ["LUK 2:29-32"], "source": "bible-srp1868" },
+
+    { "id": "pre-jela", "category": "meal", "title": "Пре јела", "note": "Оче наш (Матеј 6, 9–13) и Псалам 145, 15–16 (у богослужбеној нумерацији 144).", "parts": ["MAT 6:9-13", "PSA 145:15-16"], "source": "bible-srp1868" },
+    { "id": "posle-jela", "category": "meal", "title": "После јела", "note": "Псалам 113, 2 и Псалам 34, 1–3 (у богослужбеној нумерацији 112 и 33).", "parts": ["PSA 113:2", "PSA 34:1-3"], "source": "bible-srp1868" },
+
+    { "id": "pesma-bogorodice", "category": "other", "title": "Песма Пресвете Богородице – Велича душа моја Господа", "note": "Лука 1, 46–55", "parts": ["LUK 1:46-55"], "source": "bible-srp1868" },
+    { "id": "arhangelov-pozdrav", "category": "other", "title": "Поздрав архангела Гаврила и Јелисавете", "note": "Лука 1, 28 и 1, 42 – библијски текст из којег потиче молитва „Богородице Дјево”.", "parts": ["LUK 1:28", "LUK 1:42"], "source": "bible-srp1868" },
+    { "id": "carinikova", "category": "other", "title": "Молитва цариника", "note": "Лука 18, 13", "parts": ["LUK 18:13"], "source": "bible-srp1868" },
+    { "id": "blazenstva", "category": "other", "title": "Блаженства", "note": "Матеј 5, 3–12; певају се на Литургији.", "parts": ["MAT 5:3-12"], "source": "bible-srp1868" },
+    { "id": "psalam-23", "category": "other", "title": "Псалам 23 (22) – Господ је пастир мој", "note": "У богослужбеној нумерацији 22.", "parts": ["PSA 23:1-6"], "source": "bible-srp1868" },
+    { "id": "psalam-103", "category": "other", "title": "Псалам 103 (102) – Благосиљај, душо моја, Господа", "note": "Први антифон Литургије; у богослужбеној нумерацији 102.", "parts": ["PSA 103:1-22"], "source": "bible-srp1868" },
+    { "id": "psalam-121", "category": "other", "title": "Псалам 121 (120) – Подижем очи своје к горама", "note": "У богослужбеној нумерацији 120.", "parts": ["PSA 121:1-8"], "source": "bible-srp1868" },
+    { "id": "psalam-130", "category": "other", "title": "Псалам 130 (129) – Из дубине вичем к Теби", "note": "Псалам вечерња; у богослужбеној нумерацији 129.", "parts": ["PSA 130:1-8"], "source": "bible-srp1868" }
+  ]
+}

@@ -1,0 +1,35 @@
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native projects are generated (Continuous Native Generation): npx expo prebuild
+/android
+/ios
+
+# Build artifacts – APKs go to GitHub Releases, never into git
+*.apk
+*.aab
+
+# Signing secrets – never commit
+*.jks
+*.keystore
+*.p8
+*.p12
+*.pem
+*.mobileprovision
+credentials.json
+keystore.properties
+.env
+.env*.local
+
+# Temporary build outputs
+assets/db/*.tmp
+*.log
+.DS_Store
+.idea/
+.vscode/
+
+# Local tool settings
+.claude/

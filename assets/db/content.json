@@ -1,0 +1,17 @@
+{
+  "schema_version": "1",
+  "content_version": "1.0.0",
+  "built_at": "2026-10-12T16:06:05.955Z",
+  "bible_source": "bible-srp1868",
+  "bible_books": "GEN,EXO,LEV,NUM,DEU,JOS,JDG,RUT,1SA,2SA,1KI,2KI,1CH,2CH,EZR,NEH,EST,JOB,PSA,PRO,ECC,SNG,ISA,JER,LAM,EZK,DAN,HOS,JOL,AMO,OBA,JON,MIC,NAM,HAB,ZEP,HAG,ZEC,MAL,MAT,MRK,LUK,JHN,ACT,JAS,1PE,2PE,1JN,2JN,3JN,JUD,ROM,1CO,2CO,GAL,EPH,PHP,COL,1TH,2TH,1TI,2TI,TIT,PHM,HEB,REV",
+  "calendar_years": "2026,2027",
+  "counts": {
+    "books": 66,
+    "chapters": 1189,
+    "verses": 31111,
+    "daily_quotes": 232,
+    "prayers": 20,
+    "calendar_days": 730
+  },
+  "sha256": "afb5c9283b4d828bcd7166338f40aeb6c2b9258bde25736beb3b10d5202ba247"
+}

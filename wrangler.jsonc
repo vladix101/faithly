@@ -1,0 +1,33 @@
+// Cloudflare Worker for the Faithly PWA: static site + push API + daily reminder cron.
+// Free plan: workers.dev subdomain, D1, one Cron Trigger. See docs/WEB.md.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "faithly",
+  "main": "server/src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "./web-dist",
+    "binding": "ASSETS",
+    // Unknown paths serve index.html, so /calendar or /read/43/3 work on reload.
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "faithly",
+      "database_id": "325d91a6-5902-4eb5-8a0e-f06506cea850",
+      "migrations_dir": "server/migrations"
+    }
+  ],
+  // Every minute: checks for due reminders (≈1 440 runs/day, well inside the free limits).
+  "triggers": { "crons": ["* * * * *"] },
+  "vars": {
+    "VAPID_PUBLIC_KEY": "BK2HrNXCb1UrjLeSCUDhJGYIu9AgNS9UBHuuQHYCkiafg5jo7RBVyxqkeo3uqR-WHOFNAECpqi5h51Hir9leh0M",
+    "VAPID_SUBJECT": "https://github.com/vladix101/faithly",
+    "SEND_BATCH": "2"
+  },
+  "observability": { "enabled": true }
+}

@@ -55,3 +55,16 @@ render(
   ),
   96,
 );
+
+// PWA icons (public/icons): opaque "any" icons, a full-bleed maskable icon whose mark stays
+// inside the 80% safe circle, and the Apple touch icon (iOS ignores transparency).
+const webOut = path.resolve(out, '../../public/icons');
+fs.mkdirSync(webOut, { recursive: true });
+const renderWeb = (name, content, size) => {
+  fs.writeFileSync(path.join(webOut, name), new Resvg(content, { fitTo: { mode: 'width', value: size } }).render().asPng());
+  console.log(`public/icons/${name}`, size);
+};
+renderWeb('icon-192.png', svg(mark({ ...light, s: 1.4 }), C.cream), 192);
+renderWeb('icon-512.png', svg(mark({ ...light, s: 1.4 }), C.cream), 512);
+renderWeb('maskable-512.png', svg(mark({ ...light, s: 1.05 }), C.cream), 512);
+renderWeb('apple-touch-icon.png', svg(mark({ ...light, s: 1.4 }), C.cream), 180);

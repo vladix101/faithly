@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Faithly",
+  "short_name": "Faithly",
+  "description": "Biblija, citat dana, crkveni kalendar i molitve.",
+  "lang": "sr",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6F0E3",
+  "theme_color": "#F6F0E3",
+  "categories": ["books", "lifestyle"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

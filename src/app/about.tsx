@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 import { useCallback } from 'react';
-import { Linking, View } from 'react-native';
+import { Linking, Platform, View } from 'react-native';
 
 import { Ornament, Screen, SectionTitle, T } from '@/components/ui';
 import { getMeta, getSources } from '@/db/content';
@@ -27,7 +27,9 @@ export default function AboutScreen() {
         <T variant="body">{ui('Faithly nije zvanična aplikacija Srpske pravoslavne crkve i ne koristi njena zvanična obeležja.')}</T>
         <T variant="small" muted>
           {ui(
-            'Sav sadržaj je u aplikaciji i radi bez interneta. Nema naloga, analitike ni oglasa; omiljeni stihovi, beleške i istorija čitanja ostaju samo na ovom telefonu.',
+            Platform.OS === 'web'
+              ? 'Nema naloga, analitike ni oglasa. Omiljeni stihovi, beleške i istorija čitanja čuvaju se samo u ovom pregledaču. Ako uključiš podsetnik, Faithly server čuva samo adresu za notifikacije, izabrano vreme i vremensku zonu; isključivanjem podsetnika ti podaci se brišu.'
+              : 'Sav sadržaj je u aplikaciji. Nema naloga, analitike ni oglasa; omiljeni stihovi, beleške i istorija čitanja ostaju samo na ovom telefonu.',
           )}
         </T>
       </View>

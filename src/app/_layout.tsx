@@ -1,7 +1,12 @@
-import { Alegreya_400Regular, Alegreya_400Regular_Italic, Alegreya_500Medium, Alegreya_700Bold } from '@expo-google-fonts/alegreya';
-import { AlegreyaSans_400Regular, AlegreyaSans_500Medium, AlegreyaSans_700Bold } from '@expo-google-fonts/alegreya-sans';
-import * as Notifications from 'expo-notifications';
-import { router, Stack, type ErrorBoundaryProps } from 'expo-router';
+// Per-weight imports, so only the 7 weights in use are bundled (not all 28).
+import { Alegreya_400Regular } from '@expo-google-fonts/alegreya/400Regular';
+import { Alegreya_400Regular_Italic } from '@expo-google-fonts/alegreya/400Regular_Italic';
+import { Alegreya_500Medium } from '@expo-google-fonts/alegreya/500Medium';
+import { Alegreya_700Bold } from '@expo-google-fonts/alegreya/700Bold';
+import { AlegreyaSans_400Regular } from '@expo-google-fonts/alegreya-sans/400Regular';
+import { AlegreyaSans_500Medium } from '@expo-google-fonts/alegreya-sans/500Medium';
+import { AlegreyaSans_700Bold } from '@expo-google-fonts/alegreya-sans/700Bold';
+import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
@@ -10,27 +15,14 @@ import { useCallback, useEffect } from 'react';
 import { Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { configureNotificationHandler } from '@/services/notifications';
+import { PwaShell } from '@/components/pwa-shell';
+import { setupNotifications, useNotificationRouting } from '@/services/notification-routing';
 import { useReminderSync } from '@/services/reminder-sync';
 import { AppProvider, useApp } from '@/state/app';
 import { fonts } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
-configureNotificationHandler();
-
-/**
- * Tapping a reminder opens "Danas", which always shows today's quote. A cold start from a
- * notification already lands on "Danas" (the initial route), so only taps while running navigate.
- */
-function useNotificationRouting() {
-  useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener((r) => {
-      const url = r.notification.request.content.data?.url;
-      if (typeof url === 'string') router.navigate(url as '/');
-    });
-    return () => sub.remove();
-  }, []);
-}
+setupNotifications();
 
 function Navigation() {
   const { colors, dark, ui } = useApp();
@@ -60,6 +52,7 @@ function Navigation() {
         <Stack.Screen name="settings" options={{ title: ui('Podešavanja') }} />
         <Stack.Screen name="about" options={{ title: ui('O aplikaciji') }} />
       </Stack>
+      <PwaShell />
     </>
   );
 }

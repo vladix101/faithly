@@ -2,15 +2,34 @@
 
 # Faithly
 
-Pravoslavna Android aplikacija na srpskom jeziku: cela Biblija (prevod Daničić-Karadžić), citat dana,
-crkveni kalendar Srpske pravoslavne crkve, molitve i lokalni podsetnici. Radi bez interneta, bez naloga i
-bez slanja podataka. *Faithly nije zvanična aplikacija SPC.*
+Pravoslavna aplikacija na srpskom jeziku: cela Biblija (prevod Daničić-Karadžić), citat dana, crkveni
+kalendar Srpske pravoslavne crkve, molitve i dnevni podsetnici. Dostupna kao Android APK i kao web
+aplikacija (PWA) za iPhone i Android. Bez naloga i bez prijave. *Faithly nije zvanična aplikacija SPC.*
 
-## 📱 Preuzimanje
+### [📱 Preuzmi Android APK](https://github.com/vladix101/faithly/releases/latest/download/faithly.apk)
 
-### [📱 Preuzmi Faithly za Android](https://github.com/vladix101/faithly/releases/latest/download/faithly.apk)
+### [🍎 Otvori Faithly za iPhone / Web](https://faithly.vladetamartinovic10.workers.dev)
 
-1. Otvori link iznad na Android telefonu.
+## 🍎 iPhone (web aplikacija)
+
+1. Otvori link u **Safariju**.
+2. Izaberi **Share / Deli** (kvadrat sa strelicom nagore).
+3. Izaberi **Add to Home Screen / Dodaj na početni ekran**.
+4. Pokreni Faithly preko nove ikonice.
+5. U podešavanjima (zupčanik na ekranu „Danas”) izaberi **Uključi podsetnik** i odobri notifikacije.
+
+Podsetnici na iPhone-u rade samo iz aplikacije dodate na početni ekran, na iOS-u 16.4 ili novijem, i
+stižu preko interneta (obično u roku od nekoliko minuta od izabranog vremena). Čitanje radi i u Safariju bez
+instalacije. U podešavanjima izaberi **Preuzmi celu Bibliju** da bi tekst bio dostupan bez interneta;
+kalendar i molitve se čuvaju već pri prvom otvaranju. Omiljeni i beleške ostaju u pregledaču – povremeno ih
+sačuvaj dugmetom **Izvezi omiljene i beleške**.
+
+Na Android telefonu web verzija radi u Chrome-u (dugme **Instaliraj Faithly** ili meni ⋮ → „Instaliraj
+aplikaciju”), ali je APK potpuniji: podsetnici rade bez servera, a ima i podsetnike za praznike i post.
+
+## 📱 Android (APK)
+
+1. Otvori link „Preuzmi Android APK” na Android telefonu.
 2. Preuzmi `faithly.apk`.
 3. Otvori preuzeti fajl.
 4. Ako sistem zatraži, dozvoli instalaciju aplikacija iz korišćenog izvora (pregledač ili „Fajlovi”).
@@ -31,7 +50,7 @@ Preuzimanje bez GitHub prijave radi jer su repozitorijum i izdanje javni.
 | **Omiljeni** | Sačuvani stihovi, molitve i beleške. |
 
 Latinica/ćirilica, svetla/tamna tema i sistemsko povećanje teksta. Detalji o sadržaju i licencama:
-[docs/SOURCES.md](docs/SOURCES.md).
+[docs/SOURCES.md](docs/SOURCES.md). Web verzija, Web Push i Cloudflare: [docs/WEB.md](docs/WEB.md).
 
 ## Obuhvat sadržaja (ukratko)
 
@@ -51,8 +70,10 @@ Zahtevi: Node 22+ (testirano 24), npm. Za Android build: JDK 17 i Android SDK.
 npm install
 npm run typecheck        # TypeScript (strict)
 npm run lint             # ESLint (eslint-config-expo)
-npm test                 # Jest (logika aplikacije) + node --test (kalendar, integritet sadržaja)
+npm test                 # Jest (logika) + node --test (kalendar, sadržaj, server: DST, šifrovanje, API, cron)
 npx expo run:android     # razvojni build na emulatoru/telefonu
+npm run build:web        # produkcioni PWA build → web-dist/
+npx wrangler dev --port 8799   # lokalno: PWA + API + D1 (vidi docs/WEB.md)
 ```
 
 Struktura:
@@ -60,11 +81,15 @@ Struktura:
 ```
 src/app/            ekrani (Expo Router): (tabs)/ Danas, Biblija, Kalendar, Molitve, Omiljeni; čitač, pretraga…
 src/components/     UI komponente
-src/db/             content.ts (Biblija, citati, molitve, kalendar – samo čitanje), user.ts (korisnički podaci + migracije)
+src/db/             content(.web).ts – Biblija, citati, molitve, kalendar (SQLite / IndexedDB); user(.web).ts – korisnički podaci + migracije
 src/lib/            datumi, citat dana, reference, transliteracija/normalizacija za pretragu
-src/services/       notifikacije: planer (čist, testiran), zakazivanje, usklađivanje
+src/services/       notifikacije: planer (čist, testiran), zakazivanje, usklađivanje (*.web.ts = Web Push)
+src/web/            PWA: service worker, instalacija, Web Push klijent
+web/sw.template.js  service worker (cache strategija, push, klik na notifikaciju)
+server/             Cloudflare Worker: API, cron, D1 migracije, testovi
+public/             index.html, manifest, ikone za PWA
 src/state/app.tsx   baze, podešavanja, tema, pismo
-scripts/            build-content, generate-calendar, build-apk, release, make-icons
+scripts/            build-content, build-web(-content), generate-calendar, generate-vapid-keys, build-apk, release, make-icons
 content/            izvorni podaci: USFM Biblije, wikitekst kalendara, citati, molitve, godišnji paketi kalendara
 ```
 
@@ -140,9 +165,13 @@ u repozitorijumu.
 
 ## Privatnost
 
-Nema naloga, analitike, oglasa ni mrežnih poziva za osnovni rad. Omiljeni, beleške, istorija i podešavanja su
+Nema naloga, analitike ni oglasa. Android aplikacija ne pravi mrežne pozive za osnovni rad. Omiljeni, beleške, istorija i podešavanja su
 u lokalnoj SQLite bazi na telefonu. Jedine dozvole: notifikacije i `RECEIVE_BOOT_COMPLETED` (ponovno zakazivanje
 podsetnika posle restarta). Exact-alarm dozvola se namerno ne traži.
+
+Web verzija čuva omiljene, beleške i istoriju u IndexedDB-u pregledača. Samo ako se uključi podsetnik,
+Faithly server (Cloudflare) dobija adresu za notifikacije, sat, minut i vremensku zonu; „Isključi podsetnik”
+briše taj zapis. Detalji: [docs/WEB.md](docs/WEB.md).
 
 ## Licence
 

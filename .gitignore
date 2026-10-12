@@ -33,3 +33,10 @@ assets/db/*.tmp
 
 # Local tool settings
 .claude/
+
+# Generated web content packages (npm run build:web)
+/public/content/
+/web-dist/
+.wrangler/
+.dev.vars
+/.web-export/

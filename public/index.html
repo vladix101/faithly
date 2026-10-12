@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="sr">
+  <head>
+    <meta charset="utf-8" />
+    <!-- viewport-fit=cover exposes env(safe-area-inset-*) for the notch and home indicator;
+         interactive-widget lets the on-screen keyboard resize the layout instead of covering it. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>Faithly</title>
+    <meta name="description" content="Biblija, citat dana, crkveni kalendar i molitve." />
+    <meta name="theme-color" content="#F6F0E3" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1B1814" media="(prefers-color-scheme: dark)" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/icon-192.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Faithly" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="format-detection" content="telephone=no" />
+    <style id="expo-reset">
+      /* Full-height app shell; 100dvh follows the visible viewport on iOS (toolbar, keyboard). */
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background-color: #f6f0e3;
+        overscroll-behavior: none;
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+      }
+      @media (prefers-color-scheme: dark) {
+        html,
+        body {
+          background-color: #1b1814;
+        }
+      }
+      body {
+        overflow: hidden;
+      }
+      #root {
+        display: flex;
+        height: 100%;
+        height: 100dvh;
+        flex: 1;
+        overflow-x: hidden;
+      }
+      /* Keyboard focus must stay visible for accessibility. */
+      :focus-visible {
+        outline: 2px solid #9a7531;
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>Za Faithly je potreban JavaScript.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

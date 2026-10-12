@@ -2,7 +2,12 @@
 // Kept in a separate database so content updates can never overwrite it.
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { VerseRange } from './content';
+import type { Favorite, Note, ReadingPosition, VerseRange } from './types';
+
+export type { Favorite, Note, ReadingPosition } from './types';
+
+/** Handle passed to every function; the web adapter (user.web.ts) defines its own. */
+export type UserDb = SQLiteDatabase;
 
 export const USER_DB_NAME = 'user.db';
 
@@ -65,11 +70,6 @@ export async function getReadDays(db: SQLiteDatabase): Promise<string[]> {
 }
 
 // ---------- reading position ----------
-export interface ReadingPosition {
-  book_id: number;
-  chapter: number;
-  verse: number;
-}
 
 export const getReadingPosition = (db: SQLiteDatabase) =>
   db.getFirstAsync<ReadingPosition>('SELECT book_id, chapter, verse FROM reading_position WHERE id = 1');
@@ -86,16 +86,6 @@ export async function saveReadingPosition(db: SQLiteDatabase, p: ReadingPosition
 }
 
 // ---------- favorites ----------
-export interface Favorite {
-  id: number;
-  kind: 'verse' | 'prayer';
-  book_id: number | null;
-  chapter: number | null;
-  verse_start: number | null;
-  verse_end: number | null;
-  prayer_id: string | null;
-  created_at: string;
-}
 
 export async function isVerseFavorite(db: SQLiteDatabase, r: VerseRange): Promise<boolean> {
   const row = await db.getFirstAsync(
@@ -160,13 +150,6 @@ export const getFavorites = (db: SQLiteDatabase) => db.getAllAsync<Favorite>('SE
 export const deleteFavorite = (db: SQLiteDatabase, id: number) => db.runAsync('DELETE FROM favorites WHERE id = ?', id);
 
 // ---------- notes ----------
-export interface Note {
-  book_id: number;
-  chapter: number;
-  verse: number;
-  text: string;
-  updated_at: string;
-}
 
 export const getNote = (db: SQLiteDatabase, bookId: number, chapter: number, verse: number) =>
   db.getFirstAsync<Note>('SELECT * FROM notes WHERE book_id = ? AND chapter = ? AND verse = ?', bookId, chapter, verse);

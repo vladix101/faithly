@@ -39,6 +39,12 @@ aplikaciju”), ali je APK potpuniji: podsetnici rade bez servera, a ima i podse
 Link uvek vodi na najnovije stabilno izdanje (asset `faithly.apk` u [GitHub Releases](https://github.com/vladix101/faithly/releases)).
 Preuzimanje bez GitHub prijave radi jer su repozitorijum i izdanje javni.
 
+**Ako preuzimanje stane na 100%:** Chrome tada obično još proverava APK. Pogledaj Chrome → ⋮ → Preuzimanja
+ili aplikaciju Fajlovi → Preuzimanja – fajl je često već tu i može da se otvori. Ako nije, obriši
+nedovršeni fajl i otvori link ponovo (GitHub-ova adresa fajla važi oko sat vremena, pa preuzimanje koje je
+dugo bilo pauzirano ne može da se nastavi). Pri instalaciji Play Protect može da pita za aplikaciju van
+Google Play-a – izaberi „Instaliraj ipak”.
+
 ## Funkcije
 
 | Kartica | Šta radi |

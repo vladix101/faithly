@@ -13,8 +13,6 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const env = { ...process.env };
 env.JAVA_HOME ??= 'D:/AndroidDev/jdk/jdk-17.0.20.1+1';
 env.ANDROID_HOME ??= 'D:/AndroidDev/sdk';
-// Phones (ARM) plus x86_64 for emulators; skips 32-bit x86 to keep the APK smaller.
-env.ORG_GRADLE_PROJECT_reactNativeArchitectures ??= 'arm64-v8a,armeabi-v7a,x86_64';
 env.PATH = `${path.join(env.JAVA_HOME, 'bin')}${path.delimiter}${env.PATH}`;
 const win = process.platform === 'win32';
 

@@ -24,7 +24,7 @@ function apply(gradle) {
   const withConfig = gradle.replace(/signingConfigs \{/, (m) => `${m}${RELEASE_CONFIG}`);
   const withRelease = withConfig.replace(
     /(release \{[\s\S]*?)signingConfig signingConfigs\.debug/,
-    '$1signingConfig signingConfigs.findByName(\'faithlyRelease\') ?: signingConfigs.debug',
+    "$1signingConfig signingConfigs.findByName('faithlyRelease') ?: signingConfigs.debug",
   );
   if (withConfig === gradle || withRelease === withConfig) {
     throw new Error('with-release-signing: android/app/build.gradle layout changed; update the plugin.');

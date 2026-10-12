@@ -40,7 +40,9 @@ render('android-icon-foreground.png', svg(mark({ ...light, s: 1.0 })));
 // Monochrome (themed) icon: only alpha matters, so flame and candle are cut out of the arch.
 render(
   'android-icon-monochrome.png',
-  svg(`<defs><mask id="m"><rect width="1024" height="1024" fill="#fff"/>${mark({ arch: 'none', flame: '#000', candle: '#000', s: 1.0 })}</mask></defs><g mask="url(#m)">${mark({ arch: '#FFFFFF', flame: '#FFFFFF', candle: '#FFFFFF', s: 1.0 })}</g>`),
+  svg(
+    `<defs><mask id="m"><rect width="1024" height="1024" fill="#fff"/>${mark({ arch: 'none', flame: '#000', candle: '#000', s: 1.0 })}</mask></defs><g mask="url(#m)">${mark({ arch: '#FFFFFF', flame: '#FFFFFF', candle: '#FFFFFF', s: 1.0 })}</g>`,
+  ),
 );
 render('splash-icon.png', svg(mark(light)), 512);
 render('splash-icon-dark.png', svg(mark({ arch: C.cream, flame: C.gold, flameInner: C.goldLight, candle: C.gold })), 512);
@@ -48,6 +50,8 @@ render('favicon.png', svg(mark({ ...light, s: 1.5 }), C.cream), 96);
 // Notification small icon: white silhouette on transparent (Android tints it).
 render(
   'notification-icon.png',
-  svg(`<g transform="translate(512 512) scale(1.25) translate(-512 -560)"><path d="M512 382 C566 468 600 520 600 584 C600 642 560 684 512 684 C464 684 424 642 424 584 C424 520 458 470 512 382 Z" fill="#FFFFFF"/><rect x="486" y="704" width="52" height="116" rx="6" fill="#FFFFFF"/></g>`),
+  svg(
+    `<g transform="translate(512 512) scale(1.25) translate(-512 -560)"><path d="M512 382 C566 468 600 520 600 584 C600 642 560 684 512 684 C464 684 424 642 424 584 C424 520 458 470 512 382 Z" fill="#FFFFFF"/><rect x="486" y="704" width="52" height="116" rx="6" fill="#FFFFFF"/></g>`,
+  ),
   96,
 );

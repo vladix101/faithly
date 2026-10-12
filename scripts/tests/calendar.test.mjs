@@ -2,11 +2,25 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { test } from 'node:test';
 
-import { fastingForDay, gregorianFromJdn, isoFromJdn, jdnFromGregorian, jdnFromJulian, julianFromJdn, paschaJdn } from '../lib/church-calendar.mjs';
+import {
+  fastingForDay,
+  gregorianFromJdn,
+  isoFromJdn,
+  jdnFromGregorian,
+  jdnFromJulian,
+  julianFromJdn,
+  paschaJdn,
+} from '../lib/church-calendar.mjs';
 import { parseMenaion } from '../lib/menaion-wikitext.mjs';
 
-const menaion = parseMenaion(fs.readFileSync(new URL('../../content/sources/calendar/sr-wikipedia-pravoslavni-liturgijski-kalendar.wikitext', import.meta.url), 'utf8'));
-const isRedFixed = (jm, jd) => (menaion.get(`${String(jm).padStart(2, '0')}-${String(jd).padStart(2, '0')}`)?.saints ?? []).some((s) => s.red);
+const menaion = parseMenaion(
+  fs.readFileSync(
+    new URL('../../content/sources/calendar/sr-wikipedia-pravoslavni-liturgijski-kalendar.wikitext', import.meta.url),
+    'utf8',
+  ),
+);
+const isRedFixed = (jm, jd) =>
+  (menaion.get(`${String(jm).padStart(2, '0')}-${String(jd).padStart(2, '0')}`)?.saints ?? []).some((s) => s.red);
 const fastOn = (iso) => {
   const [y, m, d] = iso.split('-').map(Number);
   return fastingForDay({ jdn: jdnFromGregorian(y, m, d), pascha: paschaJdn(y), isRedFixed });

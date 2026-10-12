@@ -43,7 +43,21 @@ if (exists) {
   sh('git', ['push', 'origin', 'HEAD'], { stdio: 'inherit' });
   sh(
     'gh',
-    ['release', 'create', tag, `${apk}#faithly.apk`, '--repo', repo, '--title', `Faithly ${app.version}`, '--notes-file', notes, '--target', sh('git', ['rev-parse', 'HEAD']), ...(draft ? ['--draft'] : ['--latest'])],
+    [
+      'release',
+      'create',
+      tag,
+      `${apk}#faithly.apk`,
+      '--repo',
+      repo,
+      '--title',
+      `Faithly ${app.version}`,
+      '--notes-file',
+      notes,
+      '--target',
+      sh('git', ['rev-parse', 'HEAD']),
+      ...(draft ? ['--draft'] : ['--latest']),
+    ],
     { stdio: 'inherit' },
   );
 }

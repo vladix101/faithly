@@ -31,7 +31,11 @@ const HOMOGLYPHS = {
   X: 'Х',
 };
 export function fixHomoglyphs(text) {
-  return text.replace(/\p{L}+/gu, (word) => (/[Ѐ-ӿ]/.test(word) || (/[a-z]/.test(word) && [...word].every((ch) => HOMOGLYPHS[ch])) ? word.replace(/[a-zA-Z]/g, (ch) => HOMOGLYPHS[ch] ?? ch) : word));
+  return text.replace(/\p{L}+/gu, (word) =>
+    /[Ѐ-ӿ]/.test(word) || (/[a-z]/.test(word) && [...word].every((ch) => HOMOGLYPHS[ch]))
+      ? word.replace(/[a-zA-Z]/g, (ch) => HOMOGLYPHS[ch] ?? ch)
+      : word,
+  );
 }
 
 function stripLinks(s) {

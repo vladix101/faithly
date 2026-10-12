@@ -123,7 +123,5 @@ export function normalizeForSearch(text: string): string {
   const latin = cyrToLat(text.toLowerCase());
   let out = '';
   for (const ch of latin) out += STRIP[ch] ?? ch;
-  return out
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
+  return out.replace(/[^a-z0-9]+/g, ' ').trim();
 }

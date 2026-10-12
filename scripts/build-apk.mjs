@@ -26,8 +26,14 @@ function run(cmd, args, cwd = root) {
 // 1. Signing must be configured, otherwise the APK would be debug-signed.
 const gradleProps = path.join(env.GRADLE_USER_HOME ?? path.join(os.homedir(), '.gradle'), 'gradle.properties');
 const props = fs.existsSync(gradleProps) ? fs.readFileSync(gradleProps, 'utf8') : '';
-for (const key of ['FAITHLY_UPLOAD_STORE_FILE', 'FAITHLY_UPLOAD_STORE_PASSWORD', 'FAITHLY_UPLOAD_KEY_ALIAS', 'FAITHLY_UPLOAD_KEY_PASSWORD']) {
-  if (!props.includes(`${key}=`) && !env[key]) throw new Error(`Missing ${key} (in ${gradleProps} or environment). See README "Potpisivanje".`);
+for (const key of [
+  'FAITHLY_UPLOAD_STORE_FILE',
+  'FAITHLY_UPLOAD_STORE_PASSWORD',
+  'FAITHLY_UPLOAD_KEY_ALIAS',
+  'FAITHLY_UPLOAD_KEY_PASSWORD',
+]) {
+  if (!props.includes(`${key}=`) && !env[key])
+    throw new Error(`Missing ${key} (in ${gradleProps} or environment). See README "Potpisivanje".`);
 }
 
 // 2. Content database must be current, then generate the native project and build.

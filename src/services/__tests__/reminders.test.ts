@@ -19,7 +19,13 @@ jest.mock('expo-notifications', () => ({
   setNotificationChannelAsync: jest.fn(async () => null),
 }));
 
-const settings = (over: Partial<ReminderSettings> = {}): ReminderSettings => ({ dailyEnabled: true, hour: 9, minute: 0, feastsEnabled: false, ...over });
+const settings = (over: Partial<ReminderSettings> = {}): ReminderSettings => ({
+  dailyEnabled: true,
+  hour: 9,
+  minute: 0,
+  feastsEnabled: false,
+  ...over,
+});
 
 const day = (date: string, over: Partial<CalendarDay> = {}): CalendarDay => ({
   date,
@@ -39,7 +45,14 @@ describe('planReminders', () => {
 
   it('plans one daily reminder at the chosen time, or none when off', () => {
     expect(planReminders(settings({ hour: 7, minute: 30 }), '2026-11-20', now, [], [])).toEqual([
-      expect.objectContaining({ id: DAILY_ID, kind: 'daily', hour: 7, minute: 30, title: 'Faithly 🤍', body: 'Tvoj današnji biblijski citat je spreman.' }),
+      expect.objectContaining({
+        id: DAILY_ID,
+        kind: 'daily',
+        hour: 7,
+        minute: 30,
+        title: 'Faithly 🤍',
+        body: 'Tvoj današnji biblijski citat je spreman.',
+      }),
     ]);
     expect(planReminders(settings({ dailyEnabled: false }), '2026-11-20', now, [], [])).toEqual([]);
   });

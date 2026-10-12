@@ -11,7 +11,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const sh = (cmd, args, opts = {}) => execFileSync(cmd, args, { cwd: root, encoding: 'utf8', ...opts }).trim();
+const sh = (cmd, args, opts = {}) => (execFileSync(cmd, args, { cwd: root, encoding: 'utf8', ...opts }) ?? '').trim();
 
 const app = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8')).expo;
 const tag = `v${app.version}`;
@@ -29,7 +29,7 @@ const repo = `${m[1]}/${m[2]}`;
 
 const exists = (() => {
   try {
-    sh('gh', ['release', 'view', tag, '--repo', repo]);
+    sh('gh', ['release', 'view', tag, '--repo', repo], { stdio: 'pipe' });
     return true;
   } catch {
     return false;

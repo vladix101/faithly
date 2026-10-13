@@ -13,6 +13,7 @@ import * as SystemUI from 'expo-system-ui';
 import { useFonts } from 'expo-font';
 import { useCallback, useEffect } from 'react';
 import { Text, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { PwaShell } from '@/components/pwa-shell';
@@ -73,11 +74,13 @@ export default function RootLayout() {
 
   if (!fontsLoaded && !fontError) return null;
   return (
-    <SafeAreaProvider>
-      <AppProvider onReady={onReady}>
-        <Navigation />
-      </AppProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AppProvider onReady={onReady}>
+          <Navigation />
+        </AppProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

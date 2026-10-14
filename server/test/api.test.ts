@@ -227,3 +227,19 @@ test('batch size bounds the work of one cron run; stale reminders are skipped, n
   assert.equal(late.skipped, 1);
   assert.equal(svc.calls.length, 8);
 });
+
+test('a cron run cut off mid-send (CPU limit) does not lose today’s reminder', async () => {
+  const { sub } = await register();
+  const at = Date.parse('2026-10-12T07:00:30Z');
+  // The push request never completes: the run is stopped after claiming the row.
+  void dispatchDue(env, at, (() => new Promise(() => undefined)) as unknown as typeof fetch);
+  await new Promise((r) => setTimeout(r, 50));
+  const svc = fakePushService(201);
+  assert.equal((await dispatchDue(env, at + 60_000, svc.fetchImpl)).sent, 0); // still leased
+  assert.equal((await dispatchDue(env, at + 4 * 60_000, svc.fetchImpl)).sent, 1);
+  assert.equal(JSON.parse(await decryptPush(svc.calls[0].body, sub)).title, 'Faithly 🤍');
+  const row = raw.prepare('SELECT last_sent_date, next_send_at, attempts FROM subscriptions').get() as Record<string, string | number>;
+  assert.equal(row.last_sent_date, '2026-10-12');
+  assert.equal(new Date(Number(row.next_send_at)).toISOString(), '2026-10-13T07:00:00.000Z');
+  assert.equal(Number(row.attempts), 0);
+});

@@ -120,7 +120,10 @@ npm run deploy:web                                   # build + D1 migracije + de
 curl https://faithly.<subdomain>.workers.dev/api/health
 ```
 
-Kasnija izdanja: `npm run deploy:web`. Korisnici dobijaju poruku „Dostupna je nova verzija” i sami
+Kasnija izdanja: automatski. Worker je povezan sa GitHub-om (Cloudflare → faithly → Settings → Git
+repository: grana `main`, build `node scripts/build-web.mjs`, deploy `npx wrangler deploy`), pa svaki
+push na `main` ide u produkciju. Nove D1 migracije se ne primenjuju same: pre push-a pokreni
+`npx wrangler d1 migrations apply faithly --remote`. Ručni deploy i dalje radi: `npm run deploy:web`. Korisnici dobijaju poruku „Dostupna je nova verzija” i sami
 biraju kada da osveže; service worker nikad ne briše IndexedDB.
 
 **VAPID ključevi** se ne menjaju: novi par poništava sve postojeće pretplate (korisnici bi morali ponovo da

@@ -159,7 +159,7 @@ export default function TodayScreen() {
             </T>
           </View>
         ) : (
-          <Button label={ui('Pročitano')} icon="checkmark" kind="secondary" onPress={markRead} />
+          <Button label={ui('Pročitano')} icon="checkmark" onPress={markRead} />
         )}
       </View>
 

@@ -166,8 +166,13 @@ instalirali novu. Napravi bar dve kopije: `faithly-upload.jks` + lozinku u menad
 5. `git commit`, pa `npm run release` – pravi GitHub release `v<verzija>` (nije draft ni prerelease) sa
    assetom tačno `faithly.apk`, pa link „latest/download/faithly.apk” vodi na novu verziju.
 
-Potrebno: GitHub CLI prijavljen (`gh auth login`) sa pravom pisanja u repozitorijum. Nema CI/CD-a ni tajni
-u repozitorijumu.
+Potrebno: GitHub CLI prijavljen (`gh auth login`) sa pravom pisanja u repozitorijum.
+
+**Bez računara (GitHub Actions):** koraci 1, 2 i 4, commit na `main`, pa Actions → „Release APK” → Run workflow.
+Workflow (`.github/workflows/release-apk.yml`) pravi potpisan APK i objavljuje release isto kao koraci 3 i 5.
+Jednom dodaj tajne u Settings → Secrets and variables → Actions: `FAITHLY_KEYSTORE_BASE64` (keystore kao
+base64, u PowerShell-u: `[Convert]::ToBase64String([IO.File]::ReadAllBytes("$env:USERPROFILE\.faithly\faithly-upload.jks")) | Set-Clipboard`),
+`FAITHLY_UPLOAD_STORE_PASSWORD`, `FAITHLY_UPLOAD_KEY_ALIAS`, `FAITHLY_UPLOAD_KEY_PASSWORD`.
 
 ## Privatnost
 

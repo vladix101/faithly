@@ -1,8 +1,8 @@
 // Cron: sends the daily reminders that are due. Each run handles a small batch (free plan:
 // 10 ms CPU and 50 outbound requests per invocation); the rest waits for the next minute.
-import { vapid } from './api.ts';
+import { pushHost, vapid } from './api.ts';
 import type { Env } from './env.ts';
-import { DAILY_NOTICE, sendPush, type SendResult } from './push.ts';
+import { DAILY_NOTICE, sendPush, TEST_NOTICE, TEST_TTL_SECONDS, type SendResult } from './push.ts';
 import { localParts, nextSendAt } from './schedule.ts';
 
 const MAX_ATTEMPTS = 3;
@@ -86,8 +86,15 @@ export async function dispatchDue(env: Env, now = Date.now(), fetchImpl: typeof 
 
     let result: SendResult;
     let status = 0;
+    let reason: string | undefined;
     try {
-      ({ result, status } = await sendPush(row, DAILY_NOTICE, creds, TTL_SECONDS, fetchImpl));
+      ({ result, status, reason } = await sendPush(row, DAILY_NOTICE, creds, TTL_SECONDS, fetchImpl));
+      if (result === 'rejected' && status === 400) {
+        // The push service refused the reminder's headers: send it exactly like the test push,
+        // which the same subscription accepts.
+        console.warn('push 400, resending as test push', row.id, pushHost(row.endpoint), reason ?? '');
+        ({ result, status, reason } = await sendPush(row, TEST_NOTICE, creds, TEST_TTL_SECONDS, fetchImpl));
+      }
     } catch (e) {
       console.error('push build failed', row.id, e instanceof Error ? e.message : e);
       result = 'rejected';
@@ -108,11 +115,11 @@ export async function dispatchDue(env: Env, now = Date.now(), fetchImpl: typeof 
     } else if (result === 'retry' && row.attempts + 1 < MAX_ATTEMPTS) {
       // Temporary error: give today's reminder back with a short backoff (2, 4 … minutes).
       summary.retried++;
-      console.warn('push retry', row.id, status);
+      console.warn('push retry', row.id, pushHost(row.endpoint), status, reason ?? '');
       await finish(now + 120_000 * 2 ** row.attempts, row.last_sent_date, row.attempts + 1);
     } else {
       summary.failed++;
-      console.warn('push failed', row.id, result, status);
+      console.warn('push failed', row.id, pushHost(row.endpoint), result, status, reason ?? '');
       await finish(following, day, 0);
     }
   };

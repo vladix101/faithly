@@ -64,7 +64,7 @@ export interface Captured {
 }
 
 /** fetch stand-in for a push service: records requests and answers with the given status. */
-export function fakePushService(status: number | (() => number)) {
+export function fakePushService(status: number | (() => number), body: string | null = null) {
   const calls: Captured[] = [];
   const fetchImpl = (async (url: string, init: RequestInit) => {
     calls.push({
@@ -72,7 +72,8 @@ export function fakePushService(status: number | (() => number)) {
       headers: Object.fromEntries(Object.entries(init.headers as Record<string, string>)),
       body: new Uint8Array(init.body as ArrayBuffer),
     });
-    return new Response(null, { status: typeof status === 'function' ? status() : status });
+    const code = typeof status === 'function' ? status() : status;
+    return new Response(code === 204 ? null : body, { status: code });
   }) as unknown as typeof fetch;
   return { calls, fetchImpl };
 }

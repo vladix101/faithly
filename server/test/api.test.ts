@@ -243,3 +243,26 @@ test('a cron run cut off mid-send (CPU limit) does not lose today’s reminder',
   assert.equal(new Date(Number(row.next_send_at)).toISOString(), '2026-10-13T07:00:00.000Z');
   assert.equal(Number(row.attempts), 0);
 });
+
+test('a reminder refused with 400 is resent like the test push, and the reason is logged', async () => {
+  const { sub } = await register('https://web.push.apple.com/QGhJ8abc');
+  let n = 0;
+  const svc = fakePushService(() => (n++ === 0 ? 400 : 201), '{"reason":"BadWebPushTopic"}');
+  const warnings: string[] = [];
+  const warn = console.warn;
+  console.warn = (...a: unknown[]) => void warnings.push(a.join(' '));
+  try {
+    const s = await dispatchDue(env, Date.parse('2026-10-12T07:00:30Z'), svc.fetchImpl);
+    assert.equal(s.sent, 1);
+  } finally {
+    console.warn = warn;
+  }
+  assert.equal(svc.calls.length, 2);
+  assert.equal(svc.calls[0].headers.topic, 'faithly-daily');
+  assert.equal(svc.calls[1].headers.topic, 'faithly-test');
+  assert.equal(svc.calls[1].headers.ttl, '300');
+  assert.equal(JSON.parse(await decryptPush(svc.calls[1].body, sub)).title, 'Faithly 🤍');
+  assert.ok(warnings.some((w) => w.includes('web.push.apple.com') && w.includes('BadWebPushTopic')));
+  const row = raw.prepare('SELECT last_sent_date FROM subscriptions').get() as Record<string, string>;
+  assert.equal(row.last_sent_date, '2026-10-12');
+});

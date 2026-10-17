@@ -1,7 +1,7 @@
 // HTTP API for push subscriptions. Every change needs the per-installation secret token;
 // the installation id alone is not enough. Requests are size-limited, validated and rate-limited.
 import type { Env } from './env.ts';
-import { DAILY_NOTICE, sendPush } from './push.ts';
+import { sendPush, TEST_NOTICE, TEST_TTL_SECONDS } from './push.ts';
 import { isValidTimeZone, nextSendAt } from './schedule.ts';
 
 const MAX_BODY = 4096;
@@ -214,12 +214,15 @@ export async function handleApi(req: Request, env: Env, now = Date.now()): Promi
         if (row.last_test_at && now - row.last_test_at < 30_000) throw new HttpError(429, 'Sačekaj pola minuta pre sledeće probe.');
         await rateLimit(env, `test:${id}`, 20, 86_400_000, now);
         await env.DB.prepare('UPDATE subscriptions SET last_test_at = ? WHERE id = ?').bind(now, id).run();
-        const { result, status } = await sendPush(row, { ...DAILY_NOTICE, tag: 'faithly-test' }, vapid(env), 300);
+        const { result, status, reason } = await sendPush(row, TEST_NOTICE, vapid(env), TEST_TTL_SECONDS);
         if (result === 'gone') {
           await env.DB.prepare('DELETE FROM subscriptions WHERE id = ?').bind(id).run();
           throw new HttpError(410, 'Pretplata više ne važi. Isključi i ponovo uključi podsetnik.');
         }
-        if (result !== 'sent') throw new HttpError(502, `Servis za notifikacije je odbio poruku (${status}).`);
+        if (result !== 'sent') {
+          console.warn('test push failed', id, pushHost(row.endpoint), status, reason ?? '');
+          throw new HttpError(502, `Servis za notifikacije je odbio poruku (${status}).`);
+        }
         return json(202, { sent: true });
       }
     }
@@ -230,5 +233,14 @@ export async function handleApi(req: Request, env: Env, now = Date.now()): Promi
     return json(500, { error: 'Greška servera.' });
   }
 }
+
+/** Push service host for logs (the full endpoint is a secret capability URL). */
+export const pushHost = (endpoint: string) => {
+  try {
+    return new URL(endpoint).hostname;
+  } catch {
+    return '?';
+  }
+};
 
 export const vapid = (env: Env) => ({ subject: env.VAPID_SUBJECT, publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY });

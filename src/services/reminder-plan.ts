@@ -33,7 +33,7 @@ function seasonOf(day: CalendarDay | undefined): string | null {
 }
 
 /**
- * @param days        calendar days covering [today - 1, today + HORIZON_DAYS]
+ * @param days        calendar days covering [today - 1, today + horizonDays]
  * @param redEvents   red-letter events of those days, most important first
  * @param toDisplay   converts stored Cyrillic text to the user's script
  * @param ui          converts app-authored Latin strings to the user's script
@@ -46,6 +46,7 @@ export function planReminders(
   redEvents: CalendarEvent[],
   toDisplay: (s: string) => string = (s) => s,
   ui: (s: string) => string = (s) => s,
+  horizonDays = HORIZON_DAYS,
 ): PlannedReminder[] {
   const plan: PlannedReminder[] = [];
   if (settings.dailyEnabled) {
@@ -56,7 +57,7 @@ export function planReminders(
   const byDate = new Map(days.map((d) => [d.date, d]));
   const eventByDate = new Map<string, CalendarEvent>();
   for (const e of redEvents) if (!eventByDate.has(e.date)) eventByDate.set(e.date, e);
-  for (let i = 1; i <= HORIZON_DAYS; i++) {
+  for (let i = 1; i <= horizonDays; i++) {
     const date = addDays(today, i);
     const day = byDate.get(date);
     if (!day || !day.available) continue; // only verified data

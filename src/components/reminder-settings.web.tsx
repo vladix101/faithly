@@ -1,24 +1,26 @@
 // Web (PWA) reminders: real Web Push sent by the Faithly server, also when the app is closed.
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Switch, View } from 'react-native';
 
+import { planWebNotices } from '@/services/reminder-sync.web';
 import { useApp } from '@/state/app';
 import { radius, space } from '@/theme/tokens';
 import { useWebDbs } from '@/web/dbs';
 import { getEnvironment, subscribe } from '@/web/pwa';
-import { disableReminder, enableReminder, getRegistration, PushError, sendTest, syncRegistration } from '@/web/push';
+import { disableReminder, enableReminder, getRegistration, PushError, sendTest, syncNotices, syncRegistration } from '@/web/push';
 
 import { InstallInstructions } from './install-instructions';
 import { ReminderTimePicker } from './stepper';
-import { Button, T } from './ui';
+import { Button, Row, T } from './ui';
 
-type Status = 'loading' | 'not-installed' | 'unsupported' | 'denied' | 'off' | 'active';
+type Status = 'loading' | 'not-installed' | 'unsupported' | 'denied' | 'ready';
 
 export function ReminderSettings() {
-  const { settings, update, colors, ui } = useApp();
-  const { user } = useWebDbs();
+  const { settings, update, colors, ui, c } = useApp();
+  const { user, content } = useWebDbs();
   const [status, setStatus] = useState<Status>('loading');
+  const [registered, setRegistered] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -26,11 +28,12 @@ export function ReminderSettings() {
   const refresh = useCallback(async () => {
     const env = getEnvironment();
     const reg = await getRegistration(user);
+    // The stored server registration is the source of truth (it exists only while a reminder is on).
+    setRegistered(!!reg && env.notificationPermission === 'granted');
     if (env.ios && !env.standalone) return setStatus('not-installed');
     if (!env.pushSupported) return setStatus('unsupported');
     if (env.notificationPermission === 'denied') return setStatus('denied');
-    // The stored server registration is the source of truth (it exists only while the reminder is on).
-    setStatus(reg && env.notificationPermission === 'granted' ? 'active' : 'off');
+    setStatus('ready');
   }, [user]);
 
   useFocusEffect(
@@ -39,6 +42,10 @@ export function ReminderSettings() {
       return subscribe(() => void refresh());
     }, [refresh]),
   );
+
+  const dailyOn = registered && settings.reminderEnabled;
+  const feastsOn = registered && settings.feastReminders;
+  const { reminderHour: hour, reminderMinute: minute } = settings;
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
@@ -55,29 +62,56 @@ export function ReminderSettings() {
     }
   };
 
-  const turnOn = () =>
+  const feastNotices = () => planWebNotices(content, c, ui);
+
+  // Daily reminder and feast/fast notices share one push subscription; it is deleted from the
+  // server only when both are off.
+  const setDaily = (on: boolean) =>
     run(async () => {
-      await enableReminder(user, settings.reminderHour, settings.reminderMinute);
-      await update('reminderEnabled', true);
-      setNotice(ui('Podsetnik je uključen.'));
+      if (on) {
+        await enableReminder(user, hour, minute, true);
+        if (feastsOn) await syncNotices(user, await feastNotices());
+        else if (settings.feastReminders) await update('feastReminders', false); // stale flag without a subscription
+      } else if (feastsOn) await syncRegistration(user, hour, minute, false);
+      else await disableReminder(user);
+      await update('reminderEnabled', on);
+      setNotice(on ? ui('Dnevni podsetnik je uključen.') : ui('Dnevni podsetnik je isključen.'));
     });
-  const turnOff = () =>
+  const setFeasts = (on: boolean) =>
     run(async () => {
-      await disableReminder(user);
-      await update('reminderEnabled', false);
-      setNotice(ui('Podsetnik je isključen i pretplata je obrisana sa servera.'));
+      if (on) {
+        if (!registered) {
+          await enableReminder(user, hour, minute, false);
+          if (settings.reminderEnabled) await update('reminderEnabled', false); // stale flag without a subscription
+        }
+        await syncNotices(user, await feastNotices());
+      } else if (dailyOn) await syncNotices(user, []);
+      else await disableReminder(user);
+      await update('feastReminders', on);
+      setNotice(on ? ui('Podsetnici za praznike i post su uključeni.') : ui('Podsetnici za praznike i post su isključeni.'));
     });
-  const setTime = (hour: number, minute: number) =>
+  const setTime = (h: number, m: number) =>
     run(async () => {
-      await update('reminderHour', hour);
-      await update('reminderMinute', minute);
-      if (status === 'active') await syncRegistration(user, hour, minute);
+      await update('reminderHour', h);
+      await update('reminderMinute', m);
+      if (dailyOn) await syncRegistration(user, h, m, true);
     });
   const test = () =>
     run(async () => {
       await sendTest(user);
       setNotice(ui('Probna notifikacija je poslata. Treba da stigne za nekoliko sekundi.'));
     });
+
+  const toggle = (value: boolean, onChange: (v: boolean) => void, label: string) => (
+    <Switch
+      value={value}
+      onValueChange={onChange}
+      disabled={busy}
+      accessibilityLabel={label}
+      trackColor={{ true: colors.gold, false: colors.line }}
+      thumbColor={colors.surface}
+    />
+  );
 
   return (
     <View style={{ gap: space.m }}>
@@ -104,24 +138,22 @@ export function ReminderSettings() {
         </View>
       ) : null}
 
-      {status === 'off' || status === 'active' ? (
+      {status === 'ready' ? (
         <>
-          <T variant="body">{status === 'active' ? ui('Dnevni podsetnik je aktivan.') : ui('Dnevni podsetnik je isključen.')}</T>
-          <ReminderTimePicker hour={settings.reminderHour} minute={settings.reminderMinute} onChange={setTime} />
-          {status === 'active' ? (
-            <View style={{ gap: space.s }}>
-              <Button
-                label={ui('Pošalji probnu notifikaciju')}
-                icon="notifications-outline"
-                kind="secondary"
-                onPress={test}
-                disabled={busy}
-              />
-              <Button label={ui('Isključi podsetnik')} icon="notifications-off-outline" kind="quiet" onPress={turnOff} disabled={busy} />
-            </View>
-          ) : (
-            <Button label={ui('Uključi podsetnik')} icon="notifications-outline" onPress={turnOn} disabled={busy} />
-          )}
+          <Row
+            title={ui('Dnevni podsetnik')}
+            subtitle={ui('Obaveštenje da je citat dana spreman')}
+            right={toggle(dailyOn, setDaily, ui('Dnevni podsetnik'))}
+          />
+          {dailyOn ? <ReminderTimePicker hour={hour} minute={minute} onChange={setTime} /> : null}
+          <Row
+            title={ui('Praznici i početak posta')}
+            subtitle={ui('Veče pre crvenog slova i pre početka višednevnog posta')}
+            right={toggle(feastsOn, setFeasts, ui('Podsetnici za praznike i post'))}
+          />
+          {registered ? (
+            <Button label={ui('Pošalji probnu notifikaciju')} icon="notifications-outline" kind="secondary" onPress={test} disabled={busy} />
+          ) : null}
         </>
       ) : null}
 
@@ -139,7 +171,7 @@ export function ReminderSettings() {
       ) : null}
       <T variant="caption" muted>
         {ui(
-          'Podsetnik šalje Faithly server preko interneta, pa stiže i kada je aplikacija zatvorena, obično u roku od nekoliko minuta od izabranog vremena. Na server se šalju samo adresa za notifikacije, vreme i vremenska zona; beleške i omiljeni ostaju na telefonu.',
+          'Podsetnike šalje Faithly server preko interneta, pa stižu i kada je aplikacija zatvorena, obično u roku od nekoliko minuta od zakazanog vremena. Na server se šalju samo adresa za notifikacije, vreme, vremenska zona i tekstovi narednih podsetnika za praznike i post; beleške i omiljeni ostaju na telefonu.',
         )}
       </T>
     </View>

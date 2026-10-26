@@ -1,10 +1,12 @@
 // Web Push client: subscribes this installation and talks to the Faithly Worker API.
-// The server only receives the push endpoint/keys, the reminder time and the time zone.
+// The server only receives the push endpoint/keys, the reminder time and the time zone, and,
+// when feast reminders are on, the texts and times of the coming feast/fast notices.
 import { getAllSettings, setSetting, type UserDb } from '@/db/user.web';
 
 import { registerServiceWorker } from './pwa';
 
 const REG_KEY = 'webPushRegistration';
+const NOTICES_KEY = 'webPushNotices';
 
 export interface PushRegistration {
   id: string;
@@ -14,6 +16,16 @@ export interface PushRegistration {
   hour: number;
   minute: number;
   timeZone: string;
+  /** Daily reminder on; false when the installation only gets feast/fast notices. Missing = on. */
+  daily?: boolean;
+}
+
+/** A feast/fast notice for the server: sent once at sendAt (UTC ms). */
+export interface WebNotice {
+  tag: string;
+  sendAt: number;
+  title: string;
+  body: string;
 }
 
 export class PushError extends Error {}
@@ -77,9 +89,10 @@ const subscriptionBody = (s: PushSubscription) => {
 
 /**
  * Must be called from a user gesture (button press): asks for notification permission,
- * subscribes, and registers or updates the reminder on the server.
+ * subscribes, and registers or updates the installation on the server.
+ * `daily` turns the daily reminder on or off; feast/fast notices are sent with syncNotices().
  */
-export async function enableReminder(user: UserDb, hour: number, minute: number): Promise<PushRegistration> {
+export async function enableReminder(user: UserDb, hour: number, minute: number, daily = true): Promise<PushRegistration> {
   const permission = await Notification.requestPermission();
   if (permission !== 'granted') throw new PushError(permission === 'denied' ? 'denied' : 'Dozvola nije data.');
   const sub = await pushSubscription(true);
@@ -91,9 +104,9 @@ export async function enableReminder(user: UserDb, hour: number, minute: number)
       await api(`/api/subscriptions/${current.id}`, {
         method: 'PUT',
         token: current.token,
-        body: JSON.stringify({ ...subscriptionBody(sub), hour, minute, timeZone, enabled: true }),
+        body: JSON.stringify({ ...subscriptionBody(sub), hour, minute, timeZone, enabled: daily }),
       });
-      const updated = { ...current, endpoint: sub.endpoint, hour, minute, timeZone };
+      const updated = { ...current, endpoint: sub.endpoint, hour, minute, timeZone, daily };
       await saveRegistration(user, updated);
       return updated;
     } catch (e) {
@@ -103,10 +116,11 @@ export async function enableReminder(user: UserDb, hour: number, minute: number)
   }
   const created = await api<{ id: string; token: string }>('/api/subscriptions', {
     method: 'POST',
-    body: JSON.stringify({ ...subscriptionBody(sub), hour, minute, timeZone }),
+    body: JSON.stringify({ ...subscriptionBody(sub), hour, minute, timeZone, enabled: daily }),
   });
-  const reg = { ...created, endpoint: sub.endpoint, hour, minute, timeZone };
+  const reg = { ...created, endpoint: sub.endpoint, hour, minute, timeZone, daily };
   await saveRegistration(user, reg);
+  await setSetting(user, NOTICES_KEY, ''); // a new installation on the server has no notices yet
   return reg;
 }
 
@@ -119,6 +133,7 @@ export async function disableReminder(user: UserDb): Promise<void> {
     });
   }
   await saveRegistration(user, null);
+  await setSetting(user, NOTICES_KEY, '');
   const sub = await pushSubscription(false).catch(() => null);
   await sub?.unsubscribe().catch(() => undefined);
 }
@@ -134,18 +149,38 @@ export async function sendTest(user: UserDb): Promise<void> {
  * server's job), changed reminder time, or a push endpoint the browser rotated.
  * Returns false when the browser no longer has a subscription (e.g. permission revoked).
  */
-export async function syncRegistration(user: UserDb, hour: number, minute: number): Promise<boolean> {
+export async function syncRegistration(user: UserDb, hour: number, minute: number, daily = true): Promise<boolean> {
   const current = await getRegistration(user);
   if (!current) return false;
   const sub = await pushSubscription(Notification.permission === 'granted');
   if (!sub) return false;
   const timeZone = deviceTimeZone();
-  if (sub.endpoint === current.endpoint && timeZone === current.timeZone && hour === current.hour && minute === current.minute) return true;
+  if (
+    sub.endpoint === current.endpoint &&
+    timeZone === current.timeZone &&
+    hour === current.hour &&
+    minute === current.minute &&
+    daily === (current.daily ?? true)
+  )
+    return true;
   await api(`/api/subscriptions/${current.id}`, {
     method: 'PUT',
     token: current.token,
-    body: JSON.stringify({ ...subscriptionBody(sub), hour, minute, timeZone, enabled: true }),
+    body: JSON.stringify({ ...subscriptionBody(sub), hour, minute, timeZone, enabled: daily }),
   });
-  await saveRegistration(user, { ...current, endpoint: sub.endpoint, hour, minute, timeZone });
+  await saveRegistration(user, { ...current, endpoint: sub.endpoint, hour, minute, timeZone, daily });
   return true;
+}
+
+/**
+ * Replaces the feast/fast notices stored on the server (an empty list removes them).
+ * Skips the request when the list has not changed since the last upload.
+ */
+export async function syncNotices(user: UserDb, notices: WebNotice[]): Promise<void> {
+  const current = await getRegistration(user);
+  if (!current) return;
+  const key = `${current.id}|${JSON.stringify(notices)}`;
+  if ((await getAllSettings(user))[NOTICES_KEY] === key) return;
+  await api(`/api/subscriptions/${current.id}/notices`, { method: 'PUT', token: current.token, body: JSON.stringify({ notices }) });
+  await setSetting(user, NOTICES_KEY, key);
 }

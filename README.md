@@ -181,8 +181,9 @@ u lokalnoj SQLite bazi na telefonu. Jedine dozvole: notifikacije i `RECEIVE_BOOT
 podsetnika posle restarta). Exact-alarm dozvola se namerno ne traži.
 
 Web verzija čuva omiljene, beleške i istoriju u IndexedDB-u pregledača. Samo ako se uključi podsetnik,
-Faithly server (Cloudflare) dobija adresu za notifikacije, sat, minut i vremensku zonu; „Isključi podsetnik”
-briše taj zapis. Detalji: [docs/WEB.md](docs/WEB.md).
+Faithly server (Cloudflare) dobija adresu za notifikacije, sat, minut i vremensku zonu, a uz podsetnike za
+praznike i post i tekstove i vreme narednih podsetnika (iz kalendara aplikacije); kada se isključe svi
+podsetnici, taj zapis se briše. Detalji: [docs/WEB.md](docs/WEB.md).
 
 ## Licence
 

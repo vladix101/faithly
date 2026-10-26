@@ -43,6 +43,16 @@ const day = (date: string, over: Partial<CalendarDay> = {}): CalendarDay => ({
 describe('planReminders', () => {
   const now = new Date(2026, 10, 20, 10, 0); // 20 Nov 2026, 10:00
 
+  it('looks further ahead when asked (web keeps notices on the server for 60 days)', () => {
+    const feast: CalendarEvent = { date: '2027-01-07', ord: 0, kind: 'fixed', title: 'Рождество Христово', is_red: 1, is_bold: 1 };
+    const days = [day('2027-01-06'), day('2027-01-07', { is_red: 1 })];
+    const off = settings({ dailyEnabled: false, feastsEnabled: true });
+    expect(planReminders(off, '2026-11-20', now, days, [feast])).toEqual([]);
+    expect(planReminders(off, '2026-11-20', now, days, [feast], undefined, undefined, 60).map((p) => p.id)).toEqual([
+      'faithly-feast-2027-01-07',
+    ]);
+  });
+
   it('plans one daily reminder at the chosen time, or none when off', () => {
     expect(planReminders(settings({ hour: 7, minute: 30 }), '2026-11-20', now, [], [])).toEqual([
       expect.objectContaining({

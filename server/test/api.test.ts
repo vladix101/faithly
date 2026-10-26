@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
 
 import { handleApi } from '../src/api.ts';
-import { dispatchDue } from '../src/dispatch.ts';
+import { dispatchDue, dispatchNotices } from '../src/dispatch.ts';
 import type { Env } from '../src/env.ts';
 import { createD1 } from './d1-shim.ts';
 import { browserSubscription, decryptPush, fakePushService, vapidKeys } from './helpers.ts';
@@ -265,4 +265,67 @@ test('a reminder refused with 400 is resent like the test push, and the reason i
   assert.ok(warnings.some((w) => w.includes('web.push.apple.com') && w.includes('BadWebPushTopic')));
   const row = raw.prepare('SELECT last_sent_date FROM subscriptions').get() as Record<string, string>;
   assert.equal(row.last_sent_date, '2026-10-12');
+});
+
+test('feast and fast notices: stored per installation, sent once at their time, then deleted', async () => {
+  const endpoint = 'https://web.push.apple.com/QGfeast';
+  const sub = await browserSubscription(endpoint);
+  // Only feast notices: the daily reminder is off.
+  const res = await call('POST', '/api/subscriptions', { endpoint, keys: sub.keys, hour: 9, minute: 0, timeZone: 'Europe/Belgrade', enabled: false });
+  assert.equal(res.status, 201);
+  const { id, token } = (await res.json()) as { id: string; token: string };
+  const eve = Date.parse('2026-11-20T17:00:00Z'); // 18:00 in Belgrade
+  const notices = [
+    { tag: 'faithly-feast-2026-11-21', sendAt: eve, title: 'Sutra je praznik', body: 'Сабор светог Архангела Михаила' },
+    { tag: 'faithly-fast-2026-11-28', sendAt: eve + 7 * 86_400_000, title: 'Sutra počinje post', body: 'Божићни пост' },
+    { tag: 'faithly-feast-2026-10-01', sendAt: Date.parse('2026-10-01T16:00:00Z'), title: 'Prošlo', body: 'Prošlo' },
+  ];
+  const put = await call('PUT', `/api/subscriptions/${id}/notices`, { notices }, { token });
+  assert.equal(put.status, 200);
+  assert.equal(((await put.json()) as { notices: number }).notices, 2); // the past one is dropped
+  assert.equal((await call('PUT', `/api/subscriptions/${id}/notices`, { notices })).status, 404); // token required
+
+  const svc = fakePushService(201);
+  assert.equal((await dispatchDue(env, Date.parse('2026-10-12T07:00:30Z'), svc.fetchImpl)).due, 0); // no daily reminder
+  assert.equal((await dispatchNotices(env, eve - 60_000, svc.fetchImpl)).due, 0);
+  const s = await dispatchNotices(env, eve + 30_000, svc.fetchImpl);
+  assert.equal(s.sent, 1);
+  assert.equal(svc.calls[0].headers.topic, 'faithly-feast-2026-11-21');
+  assert.deepEqual(JSON.parse(await decryptPush(svc.calls[0].body, sub)), {
+    title: 'Sutra je praznik',
+    body: 'Сабор светог Архангела Михаила',
+    url: '/calendar',
+    tag: 'faithly-feast-2026-11-21',
+  });
+  assert.equal((await dispatchNotices(env, eve + 90_000, svc.fetchImpl)).due, 0);
+  assert.equal(Number((raw.prepare('SELECT COUNT(*) n FROM notices').get() as { n: number }).n), 1);
+
+  // Turning everything off deletes the installation and its notices.
+  assert.equal((await call('DELETE', `/api/subscriptions/${id}`, undefined, { token })).status, 204);
+  assert.equal(Number((raw.prepare('SELECT COUNT(*) n FROM notices').get() as { n: number }).n), 0);
+});
+
+test('notice lists are validated', async () => {
+  const { id, token } = await register();
+  const put = (notices: unknown) => call('PUT', `/api/subscriptions/${id}/notices`, { notices }, { token });
+  const ok = { tag: 'faithly-feast-2026-11-21', sendAt: Date.parse('2026-11-20T17:00:00Z'), title: 'Sutra je praznik', body: 'x' };
+  assert.equal((await put([ok])).status, 200);
+  assert.equal((await put([])).status, 200);
+  assert.equal((await put('x')).status, 400);
+  assert.equal((await put([{ ...ok, tag: 'other' }])).status, 400);
+  assert.equal((await put([ok, ok])).status, 400);
+  assert.equal((await put([{ ...ok, sendAt: Date.parse('2027-12-01T00:00:00Z') }])).status, 400);
+  assert.equal((await put([{ ...ok, title: '' }])).status, 400);
+  assert.equal((await put([{ ...ok, body: 'x'.repeat(301) }])).status, 400);
+  assert.equal((await put(Array.from({ length: 41 }, (_, i) => ({ ...ok, tag: `faithly-feast-2026-11-${String(i).padStart(2, '0')}` })))).status, 400);
+});
+
+test('a notice refused by an expired subscription removes the installation', async () => {
+  const { id, token } = await register();
+  const sendAt = Date.parse('2026-11-20T17:00:00Z');
+  await call('PUT', `/api/subscriptions/${id}/notices`, { notices: [{ tag: 'faithly-fast-2026-11-28', sendAt, title: 't', body: 'b' }] }, { token });
+  const s = await dispatchNotices(env, sendAt + 1000, fakePushService(410).fetchImpl);
+  assert.equal(s.removed, 1);
+  assert.equal(Number((raw.prepare('SELECT COUNT(*) n FROM subscriptions').get() as { n: number }).n), 0);
+  assert.equal(Number((raw.prepare('SELECT COUNT(*) n FROM notices').get() as { n: number }).n), 0);
 });

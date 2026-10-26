@@ -1,4 +1,5 @@
 // Minimal D1 implementation over node:sqlite, so the real SQL in the Worker is exercised in tests.
+// Only 0001 is applied: later tables come from ensureSchema(), as in production.
 import fs from 'node:fs';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 

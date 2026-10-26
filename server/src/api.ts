@@ -2,9 +2,14 @@
 // the installation id alone is not enough. Requests are size-limited, validated and rate-limited.
 import type { Env } from './env.ts';
 import { sendPush, TEST_NOTICE, TEST_TTL_SECONDS } from './push.ts';
+import { ensureSchema } from './schema.ts';
 import { isValidTimeZone, nextSendAt } from './schedule.ts';
 
 const MAX_BODY = 4096;
+/** A list of feast/fast notices in Cyrillic is larger than the other requests. */
+const MAX_NOTICES_BODY = 16_384;
+const MAX_NOTICES = 40;
+const NOTICE_TAG = /^faithly-(feast|fast)-\d{4}-\d{2}-\d{2}$/;
 const PUSH_HOSTS = ['fcm.googleapis.com', '.google.com', '.push.apple.com', '.push.services.mozilla.com', '.notify.windows.com'];
 const B64URL = /^[A-Za-z0-9_-]+$/;
 
@@ -50,11 +55,11 @@ function allowedEndpoint(endpoint: unknown, env: Env): endpoint is string {
   return PUSH_HOSTS.some((h) => (h.startsWith('.') ? url.hostname.endsWith(h) : url.hostname === h));
 }
 
-async function readBody(req: Request): Promise<Record<string, unknown>> {
+async function readBody(req: Request, max = MAX_BODY): Promise<Record<string, unknown>> {
   const declared = Number(req.headers.get('content-length') ?? '0');
-  if (declared > MAX_BODY) throw new HttpError(413, 'Zahtev je prevelik.');
+  if (declared > max) throw new HttpError(413, 'Zahtev je prevelik.');
   const text = await req.text();
-  if (text.length > MAX_BODY) throw new HttpError(413, 'Zahtev je prevelik.');
+  if (text.length > max) throw new HttpError(413, 'Zahtev je prevelik.');
   try {
     const v = JSON.parse(text || '{}');
     if (v && typeof v === 'object' && !Array.isArray(v)) return v as Record<string, unknown>;
@@ -85,6 +90,40 @@ function parseReminder(b: Record<string, unknown>, env: Env): ReminderInput {
   if (!Number.isInteger(minute) || (minute as number) < 0 || (minute as number) > 59) throw new HttpError(400, 'Neispravan minut.');
   if (!isValidTimeZone(timeZone)) throw new HttpError(400, 'Neispravna vremenska zona.');
   return { endpoint, p256dh: keys.p256dh, auth: keys.auth, hour: hour as number, minute: minute as number, timeZone };
+}
+
+interface NoticeInput {
+  tag: string;
+  sendAt: number;
+  title: string;
+  body: string;
+}
+
+/** Feast/fast notices computed by the app: [{ tag, sendAt (UTC ms), title, body }]. */
+function parseNotices(b: Record<string, unknown>, now: number): NoticeInput[] {
+  const list = b.notices;
+  if (!Array.isArray(list) || list.length > MAX_NOTICES) throw new HttpError(400, 'Neispravna lista podsetnika.');
+  const tags = new Set<string>();
+  const out: NoticeInput[] = [];
+  for (const n of list as Record<string, unknown>[]) {
+    const { tag, sendAt, title, body } = n ?? {};
+    if (typeof tag !== 'string' || !NOTICE_TAG.test(tag) || tags.has(tag)) throw new HttpError(400, 'Neispravan podsetnik.');
+    if (!Number.isInteger(sendAt) || (sendAt as number) > now + 120 * 86_400_000) throw new HttpError(400, 'Neispravno vreme podsetnika.');
+    if (typeof title !== 'string' || !title || title.length > 80) throw new HttpError(400, 'Neispravan naslov podsetnika.');
+    if (typeof body !== 'string' || !body || body.length > 300) throw new HttpError(400, 'Neispravan tekst podsetnika.');
+    tags.add(tag);
+    if ((sendAt as number) > now) out.push({ tag, sendAt: sendAt as number, title, body });
+  }
+  return out;
+}
+
+/** Deletes an installation together with its feast/fast notices. */
+export async function deleteSubscription(env: Env, id: string): Promise<void> {
+  await ensureSchema(env);
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM notices WHERE subscription_id = ?').bind(id),
+    env.DB.prepare('DELETE FROM subscriptions WHERE id = ?').bind(id),
+  ]);
 }
 
 /** Fixed-window counter in D1; throws 429 when `limit` is exceeded within `windowMs`. */
@@ -148,17 +187,22 @@ export async function handleApi(req: Request, env: Env, now = Date.now()): Promi
       return json(200, { vapidPublicKey: env.VAPID_PUBLIC_KEY });
     }
 
+    await ensureSchema(env);
     if (path === '/api/subscriptions' && req.method === 'POST') {
       await rateLimit(env, `create:${await clientKey(req)}`, 10, 3_600_000, now);
-      const input = parseReminder(await readBody(req), env);
+      const b = await readBody(req);
+      const input = parseReminder(b, env);
+      // enabled = the daily reminder; an installation with only feast/fast notices has it off.
+      const enabled = b.enabled !== false;
       const id = crypto.randomUUID();
       const token = randomToken(32);
       // A browser that lost its local data re-registers with the same endpoint: replace the old row.
       await env.DB.batch([
+        env.DB.prepare('DELETE FROM notices WHERE subscription_id IN (SELECT id FROM subscriptions WHERE endpoint = ?)').bind(input.endpoint),
         env.DB.prepare('DELETE FROM subscriptions WHERE endpoint = ?').bind(input.endpoint),
         env.DB.prepare(
           `INSERT INTO subscriptions (id, token_hash, endpoint, p256dh, auth, hour, minute, time_zone, enabled, next_send_at, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         ).bind(
           id,
           await sha256(token),
@@ -168,7 +212,8 @@ export async function handleApi(req: Request, env: Env, now = Date.now()): Promi
           input.hour,
           input.minute,
           input.timeZone,
-          nextSendAt(now, input.hour, input.minute, input.timeZone, null),
+          enabled ? 1 : 0,
+          enabled ? nextSendAt(now, input.hour, input.minute, input.timeZone, null) : null,
           now,
           now,
         ),
@@ -176,13 +221,31 @@ export async function handleApi(req: Request, env: Env, now = Date.now()): Promi
       return json(201, { id, token });
     }
 
-    const m = /^\/api\/subscriptions\/([0-9a-f-]{36})(\/test)?$/.exec(path);
+    const m = /^\/api\/subscriptions\/([0-9a-f-]{36})(\/test|\/notices)?$/.exec(path);
     if (m) {
-      const [, id, test] = m;
+      const [, id, sub] = m;
+      const test = sub === '/test';
       await rateLimit(env, `sub:${id}`, 60, 3_600_000, now);
       const row = await authorize(req, env, id);
 
-      if (!test && req.method === 'PUT') {
+      if (sub === '/notices' && req.method === 'PUT') {
+        // Replaces the whole list: the app sends every notice of the coming weeks when it opens.
+        const notices = parseNotices(await readBody(req, MAX_NOTICES_BODY), now);
+        await env.DB.batch([
+          env.DB.prepare('DELETE FROM notices WHERE subscription_id = ?').bind(id),
+          ...notices.map((n) =>
+            env.DB.prepare('INSERT INTO notices (subscription_id, tag, send_at, title, body) VALUES (?, ?, ?, ?, ?)').bind(
+              id,
+              n.tag,
+              n.sendAt,
+              n.title,
+              n.body,
+            ),
+          ),
+        ]);
+        return json(200, { ok: true, notices: notices.length });
+      }
+      if (!sub && req.method === 'PUT') {
         const b = await readBody(req);
         const input = parseReminder(b, env);
         const enabled = b.enabled !== false;
@@ -206,8 +269,8 @@ export async function handleApi(req: Request, env: Env, now = Date.now()): Promi
           .run();
         return json(200, { ok: true });
       }
-      if (!test && req.method === 'DELETE') {
-        await env.DB.prepare('DELETE FROM subscriptions WHERE id = ?').bind(id).run();
+      if (!sub && req.method === 'DELETE') {
+        await deleteSubscription(env, id);
         return json(204, null);
       }
       if (test && req.method === 'POST') {
@@ -216,7 +279,7 @@ export async function handleApi(req: Request, env: Env, now = Date.now()): Promi
         await env.DB.prepare('UPDATE subscriptions SET last_test_at = ? WHERE id = ?').bind(now, id).run();
         const { result, status, reason } = await sendPush(row, TEST_NOTICE, vapid(env), TEST_TTL_SECONDS);
         if (result === 'gone') {
-          await env.DB.prepare('DELETE FROM subscriptions WHERE id = ?').bind(id).run();
+          await deleteSubscription(env, id);
           throw new HttpError(410, 'Pretplata više ne važi. Isključi i ponovo uključi podsetnik.');
         }
         if (result !== 'sent') {

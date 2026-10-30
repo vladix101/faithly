@@ -92,3 +92,11 @@ test('generated yearly packages are complete and versioned', () => {
     assert.ok(pkg.days.every((d) => d.available && d.events.length > 0));
   }
 });
+
+test('the last day of a month does not swallow the next month heading and table markup', () => {
+  const pkg = JSON.parse(fs.readFileSync(new URL('../../content/calendar/2026.json', import.meta.url), 'utf8'));
+  const text = JSON.stringify(pkg);
+  for (const junk of ['wikitable', '== ', '{|', '|}']) assert.ok(!text.includes(junk), `calendar contains "${junk}"`);
+  const luke = pkg.days.find((d) => d.date === '2026-10-31');
+  assert.deepEqual(luke.folk, ['Лукиндан']);
+});

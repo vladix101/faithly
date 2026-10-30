@@ -98,7 +98,10 @@ export function parseMenaion(wikitext) {
   for (const row of rows) {
     const m = row.match(ROW);
     if (!m) continue;
-    const [, gd, gm, jd, jm, rest] = m;
+    const [, gd, gm, jd, jm, tail] = m;
+    // The last row of a month runs into "|}" (end of table), the next month's heading and table
+    // start: everything from the end of the table on is not part of the row.
+    const rest = tail.split(/\n\|\}/)[0];
     // Columns after the dates: image | saints | folk name; each starts with "|" at line start.
     const cols = rest.split(/\n\|/).map((c) => c.replace(/^\|/, ''));
     const saintsCol = cols.find((c) => !/^\s*\[\[(Датотека|File|Слика):/.test(c) && c.trim() !== '') ?? '';

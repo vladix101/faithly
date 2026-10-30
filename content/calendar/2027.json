@@ -1535,9 +1535,7 @@
     "name": null
    },
    "folk": [
-    "Атанасијевдан } == Фебруар (Сретењски) == {| class=\"wikitable sortable mw-collapsible mw-collapsed\" style=\"border:black solid",
-    "text-align:left",
-    "\" rules=\"all\""
+    "Атанасијевдан"
    ],
    "events": [
     {
@@ -5562,11 +5560,7 @@
     "type": "water",
     "name": "Велики (Часни) пост"
    },
-   "folk": [
-    "} == Април (Ђурђевски) == {| class=\"wikitable sortable mw-collapsible mw-collapsed\" style=\"border:black solid",
-    "text-align:left",
-    "\" rules=\"all\""
-   ],
+   "folk": [],
    "events": [
     {
      "kind": "fixed",
@@ -7546,11 +7540,7 @@
     "type": "water",
     "name": "Велики (Часни) пост – Страсна седмица"
    },
-   "folk": [
-    "} == Мај (Царски) == {| class=\"wikitable sortable mw-collapsible mw-collapsed\" style=\"border:black solid",
-    "text-align:left",
-    "\" rules=\"all\""
-   ],
+   "folk": [],
    "events": [
     {
      "kind": "movable",
@@ -9544,11 +9534,7 @@
     "type": "none",
     "name": null
    },
-   "folk": [
-    "} == Јун (Петровски) == {| class=\"wikitable sortable mw-collapsible mw-collapsed\" style=\"border:black solid",
-    "text-align:left",
-    "\" rules=\"all\""
-   ],
+   "folk": [],
    "events": [
     {
      "kind": "fixed",
@@ -11588,11 +11574,7 @@
     "type": "water",
     "name": "Петровски пост"
    },
-   "folk": [
-    "} == Јул (Илински) == {| class=\"wikitable sortable mw-collapsible mw-collapsed\" style=\"border:black solid",
-    "text-align:left",
-    "\" rules=\"all\""
-   ],
+   "folk": [],
    "events": [
     {
      "kind": "fixed",
@@ -13888,11 +13870,7 @@
     "type": "none",
     "name": null
    },
-   "folk": [
-    "} == Август (Госпођински) == {| class=\"wikitable sortable mw-collapsible mw-collapsed\" style=\"border:black solid",
-    "text-align:left",
-    "\" rules=\"all\""
-   ],
+   "folk": [],
    "events": [
     {
      "kind": "fixed",
@@ -16228,11 +16206,7 @@
     "type": "none",
     "name": null
    },
-   "folk": [
-    "} == Септембар (Михољски) == {| class=\"wikitable sortable mw-collapsible mw-collapsed\" style=\"border:black solid",
-    "text-align:left",
-    "\" rules=\"all\""
-   ],
+   "folk": [],
    "events": [
     {
      "kind": "fixed",
@@ -18748,11 +18722,7 @@
     "type": "none",
     "name": null
    },
-   "folk": [
-    "} == Октобар (Митровски) == {| class=\"wikitable sortable mw-collapsible mw-collapsed\" style=\"border:black solid",
-    "text-align:left",
-    "\" rules=\"all\""
-   ],
+   "folk": [],
    "events": [
     {
      "kind": "fixed",
@@ -20931,9 +20901,7 @@
     "name": null
    },
    "folk": [
-    "Лукиндан } == Новембар (Мратињски) == {| class=\"wikitable sortable mw-collapsible mw-collapsed\" style=\"border:black solid",
-    "text-align:left",
-    "\" rules=\"all\""
+    "Лукиндан"
    ],
    "events": [
     {
@@ -23212,9 +23180,7 @@
     "name": "Божићни пост"
    },
    "folk": [
-    "Григоријевдан } == Децембар (Божићни) == {| class=\"wikitable sortable mw-collapsible mw-collapsed\" style=\"border:black solid",
-    "text-align:left",
-    "\" rules=\"all\""
+    "Григоријевдан"
    ],
    "events": [
     {
@@ -25717,20 +25683,7 @@
     "type": "water",
     "name": "Божићни пост"
    },
-   "folk": [
-    "} == Види још == * Верски календар * Покретни празници код православаца * Списак православних празника * Списак светитеља СПЦ * Народни календар * Годишњак (народни календар) * Верски празници у Српском народу у 16. веку == Референце == == Литература == * Милан Т. Вуковић: „Народни обичаји",
-    "веровања и пословице код Срба”",
-    "Београд 1985. * Упоредо коришћени црквени календари за 1951",
-    "2005",
-    "2006. и 2007. годину == Спољашње везе == * [https://svetosavlje.org/prolog/ Житија светаца",
-    "созерцање",
-    "расуђивање",
-    "беседа и песма за сваки дан",
-    "— Охридски пролог",
-    "— Владика Николај Велимировић] * [http://days.pravoslavie.ru/ -{days.pravoslavie.ru}-",
-    "— календар са житијама и беседом за сваки дан] * [http://zitija.blogspot.com/ Житија светих] * [http://pravoslavnikalendar.rs/ Православац",
-    "— црквени календар] * [https://pravoslavnicrkvenikalendar.rs/ Православни црквени календар - са житијима светих и беседом за сваки дан] Категорија:Православље Категорија:Календари Категорија:Литургија Категорија:Православно богослужење"
-   ],
+   "folk": [],
    "events": [
     {
      "kind": "fixed",
